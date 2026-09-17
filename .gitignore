@@ -19,3 +19,7 @@ htmlcov/
 .streamlit/secrets.toml
 data/
 tmp/
+# Local benchmark reports, raw results, and improvement notes
+tmp/financebench/
+benchmarks/cache/
+benchmarks/financebench/

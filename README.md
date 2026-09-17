@@ -131,6 +131,24 @@ CiteCraft uses a parent/summary multi-vector retrieval pattern:
 This separation gives semantic search a concise representation while preserving full source
 detail for grounded answers and page-level citations.
 
+## Measured results
+
+CiteCraft was evaluated on a pinned subset of the FinanceBench open-source sample: **32
+human-annotated questions across 10 financial reports, 403 PDF pages, and 1,154 extracted text
+and table elements**.
+
+| Metric | Result |
+| --- | ---: |
+| Source-grounded responses | **85.9%** |
+| Citation completeness | **84.4%** |
+| Citation correctness | **79.7%** |
+| Source-withheld abstention accuracy | **90.0%** |
+| Retrieval latency P95 | **0.46s** |
+| End-to-end latency P95 | **7.09s** |
+
+These figures are model-graded observations from the recorded 32-question evaluation and describe
+grounding, citation quality, abstention behavior, and latency for that benchmark configuration.
+
 ## Quick start
 
 ### Prerequisites
@@ -183,6 +201,7 @@ Copy `.env.example` to `.env` and adjust these values as needed:
 | `REDIS_URL` | `redis://localhost:6379/0` | Parent-element and ingestion metadata store |
 | `PGVECTOR_COLLECTION` | `citecraft_documents` | Vector table and index prefix |
 | `CHAT_MODEL` | `gpt-4o-mini` | Retrieval-summary and answer model |
+| `OPENAI_STORE_RESPONSES` | `true` | Store summary and answer outputs in OpenAI for dashboard/API observability |
 | `EMBEDDING_MODEL` | `text-embedding-3-small` | Vector embedding model |
 | `EMBEDDING_DIMENSIONS` | `1536` | Dimension of the selected embedding model |
 | `TOP_K` | `5` | Parent elements retrieved per question |
@@ -200,6 +219,7 @@ scans, try `PARTITION_STRATEGY=ocr_only`.
 ├── .github/                     # CI and contribution templates
 ├── app.py                       # Streamlit interface
 ├── compose.yaml                 # PostgreSQL/pgvector and Redis services
+├── benchmarks/                  # Reproducible FinanceBench runner and manifest
 ├── src/citecraft/
 │   ├── config.py                # Environment-backed settings
 │   ├── pdf_processor.py         # PDF text/table extraction
@@ -225,5 +245,7 @@ GitHub Actions runs the same test and lint checks for pull requests and pushes t
 - Extracted content and embeddings are stored in the locally configured Redis and PostgreSQL
   services.
 - Relevant excerpts are sent to OpenAI for retrieval summaries and answer generation.
+- Summary and answer model responses are stored by OpenAI by default for observability. Set
+  `OPENAI_STORE_RESPONSES=false` to disable application-state storage for these requests.
 - API keys belong in `.env` or `.streamlit/secrets.toml`; both are excluded from version control.
 - Uploaded files are written only to a temporary directory during ingestion.

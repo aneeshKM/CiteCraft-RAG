@@ -45,6 +45,7 @@ class RagService:
             model_name=settings.chat_model,
             api_key=settings.openai_api_key,
             max_concurrency=settings.summary_concurrency,
+            store_responses=settings.openai_store_responses,
         )
         self._answer_model = None
 
@@ -119,12 +120,17 @@ class RagService:
             self._answer_model = ChatOpenAI(
                 model=self.settings.chat_model,
                 api_key=self.settings.openai_api_key,
+                model_kwargs={"store": self.settings.openai_store_responses},
             )
         response = self._answer_model.invoke(
             [
                 SystemMessage(content=ANSWER_SYSTEM_PROMPT),
                 HumanMessage(content=user_prompt),
-            ]
+            ],
+            metadata={
+                "application": "citecraft",
+                "operation": "rag_answer",
+            },
         )
         return Answer(
             text=str(response.content),

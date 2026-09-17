@@ -12,10 +12,21 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ElementSummarizer:
-    def __init__(self, *, model_name: str, api_key: str, max_concurrency: int = 4) -> None:
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        api_key: str,
+        max_concurrency: int = 4,
+        store_responses: bool = True,
+    ) -> None:
         from langchain_openai import ChatOpenAI
 
-        self._model = ChatOpenAI(model=model_name, api_key=api_key)
+        self._model = ChatOpenAI(
+            model=model_name,
+            api_key=api_key,
+            model_kwargs={"store": store_responses},
+        )
         self._max_concurrency = max_concurrency
 
     def summarize(self, elements: Sequence[ExtractedElement]) -> list[str]:
@@ -42,6 +53,10 @@ class ElementSummarizer:
                 responses = self._model.batch(
                     pending_messages,
                     config={"max_concurrency": self._max_concurrency},
+                    metadata={
+                        "application": "citecraft",
+                        "operation": "retrieval_summary",
+                    },
                 )
                 for index, response in zip(pending_indexes, responses, strict=True):
                     results[index] = str(response.content)
@@ -51,4 +66,3 @@ class ElementSummarizer:
                     results[index] = elements[index].text
 
         return [result or elements[index].text for index, result in enumerate(results)]
-

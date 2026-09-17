@@ -38,6 +38,26 @@ class DocumentRepository:
         value = self._redis.get(f"{self.INDEX_PREFIX}{file_hash}")
         return json.loads(value) if value else None
 
+    def indexed_element_counts(self, file_hash: str) -> dict[str, int]:
+        """Return persisted element counts by kind for one indexed document."""
+        import psycopg
+        from psycopg import sql
+
+        statement = sql.SQL(
+            """
+            SELECT metadata->>'kind', COUNT(*)
+            FROM {}
+            WHERE metadata->>'file_hash' = %s
+            GROUP BY metadata->>'kind'
+            """
+        ).format(sql.Identifier(self._table_name))
+        with (
+            psycopg.connect(self._postgres_url, connect_timeout=5) as connection,
+            connection.cursor() as cursor,
+        ):
+            cursor.execute(statement, (file_hash,))
+            return {str(kind): int(count) for kind, count in cursor.fetchall()}
+
     def add(self, elements: Sequence[ExtractedElement], summaries: Sequence[str]) -> None:
         if len(elements) != len(summaries):
             raise ValueError("Each extracted element must have one retrieval summary.")

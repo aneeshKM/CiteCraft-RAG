@@ -17,6 +17,7 @@ class Settings:
     redis_url: str = "redis://localhost:6379/0"
     collection_name: str = "citecraft_documents"
     chat_model: str = "gpt-4o-mini"
+    openai_store_responses: bool = True
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1_536
     top_k: int = 5
@@ -36,6 +37,7 @@ class Settings:
             redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
             collection_name=os.getenv("PGVECTOR_COLLECTION", "citecraft_documents"),
             chat_model=os.getenv("CHAT_MODEL", "gpt-4o-mini"),
+            openai_store_responses=_boolean("OPENAI_STORE_RESPONSES", True),
             embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
             embedding_dimensions=_positive_int("EMBEDDING_DIMENSIONS", 1_536),
             top_k=_positive_int("TOP_K", 5),
@@ -62,3 +64,15 @@ def _positive_int(name: str, default: int) -> int:
     if value < 1:
         raise ValueError(f"{name} must be greater than zero.")
     return value
+
+
+def _boolean(name: str, default: bool) -> bool:
+    raw_value = os.getenv(name, str(default)).strip().lower()
+    if raw_value in {"1", "true", "yes", "on"}:
+        return True
+    if raw_value in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(
+        f"{name} must be one of: true, false, 1, 0, yes, no, on, off; "
+        f"received {raw_value!r}."
+    )
